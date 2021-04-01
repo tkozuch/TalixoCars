@@ -49,7 +49,7 @@ def get_cars_list(request):
 
         return HttpResponse(
             serializers.serialize("json", cars, fields=needed_fields),
-            content_type="text/json",
+            content_type="application/json",
         )
 
 
