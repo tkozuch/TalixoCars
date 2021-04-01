@@ -2,7 +2,6 @@ import json
 
 from django.core import serializers
 from django.core.serializers.json import DjangoJSONEncoder
-from django.forms.models import model_to_dict
 from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -43,7 +42,6 @@ def get_cars_list(request):
         needed_fields = _get_needed_fields(
             show_category, show_type, car_fields=Car._meta.get_fields()
         )
-        # TODO: Add Django-fields by request params filtering.
         cars = Car.objects.only(*needed_fields)
 
         return HttpResponse(
@@ -53,7 +51,6 @@ def get_cars_list(request):
 
 
 def _get_flags_from_params(request):
-    # TODO: Change for parser
     show_category = request.GET.get("show_category", "false")
     show_type = request.GET.get("show_type", "false")
     if show_category.lower() not in ["true", "false"] and show_type.lower() not in [
@@ -77,7 +74,6 @@ def _get_needed_fields(show_category, show_type, car_fields):
     return needed_fields
 
 
-# TODO: Change so that all fields are required.
 @api_view(["POST"])
 def add_car(request):
     serializer = CarCreateSerializer(data=request.data)
@@ -106,7 +102,6 @@ def update_car(request):
             return HttpResponse(status=422)
 
 
-# TODO: Check if can be changed to generic? (but rather not)
 @api_view(["POST"])
 def delete_car(request):
     try:

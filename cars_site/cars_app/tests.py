@@ -428,7 +428,7 @@ class TestDeleteCarView(TestCase):
             }
         )
 
-        invalid_pk = 'asdf'
+        invalid_pk = "asdf"
         response = self.client.post(self.url, data={"pk": invalid_pk})
 
         self.assertEqual(response.status_code, 422)
