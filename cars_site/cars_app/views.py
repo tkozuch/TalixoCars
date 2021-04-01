@@ -21,16 +21,15 @@ def get_car(request):
     except (WrongParamsException, KeyError):
         return HttpResponse(status=422)
     else:
-        needed_fields = _get_needed_fields(show_category, show_type)
+        needed_fields = _get_needed_fields(
+            show_category, show_type, car_fields=Car._meta.get_fields()
+        )
         try:
-            # TODO: Needed fields filtering is probably of no use here as it still returns the
-            #  whole object.
-            [car] = Car.objects.only(*needed_fields).filter(id=id_)
+            [car] = Car.objects.filter(id=id_).values(*needed_fields)
         except (Car.DoesNotExist, ValueError):
             return HttpResponse(status=422)
         else:
-            car_serialized = json.dumps(model_to_dict(car, fields=needed_fields),
-                                        cls=DjangoJSONEncoder)
+            car_serialized = json.dumps(car, cls=DjangoJSONEncoder)
             return HttpResponse(car_serialized, content_type="application/json")
 
 
@@ -41,11 +40,11 @@ def get_cars_list(request):
     except WrongParamsException:
         return HttpResponse(status=422)
     else:
-        needed_fields = _get_needed_fields(show_category, show_type)
-        # TODO: Needed fields filtering is probably of no use here as it still returns the
-        #  whole object.
-        # TODO: Add Django-fields filtering.
-        cars = Car.objects.only(*needed_fields).values()
+        needed_fields = _get_needed_fields(
+            show_category, show_type, car_fields=Car._meta.get_fields()
+        )
+        # TODO: Add Django-fields by request params filtering.
+        cars = Car.objects.only(*needed_fields)
 
         return HttpResponse(
             serializers.serialize("json", cars, fields=needed_fields),
@@ -66,10 +65,10 @@ def _get_flags_from_params(request):
         return show_category, show_type
 
 
-def _get_needed_fields(show_category, show_type):
+def _get_needed_fields(show_category, show_type, car_fields):
     show_category = show_category.lower() == "true"
     show_type = show_type.lower() == "true"
-    needed_fields = [field.name for field in Car._meta.get_fields()]
+    needed_fields = [field.name for field in car_fields]
     if show_category is False:
         needed_fields.remove("category")
     if show_type is False:
@@ -99,7 +98,9 @@ def update_car(request):
     else:
         serializer = CarUpdateSerializer(instance=to_update, data=data)
         if serializer.is_valid():
-            serializer.update(instance=to_update, validated_data=serializer.validated_data)
+            serializer.update(
+                instance=to_update, validated_data=serializer.validated_data
+            )
             return HttpResponse(status=204)
         else:
             return HttpResponse(status=422)
