@@ -1,7 +1,7 @@
 from django.forms import model_to_dict
 from django.test import TestCase
 
-from .views import *
+from .models import Car
 
 
 class TestGetCarView(TestCase):
@@ -377,3 +377,58 @@ class TestUpdateCarView(TestCase):
 
         car_updated = Car.objects.get(id=car.pk)
         self.assertDictEqual(model_to_dict(car), model_to_dict(car_updated))
+
+
+class TestDeleteCarView(TestCase):
+    def setUp(self) -> None:
+        self.url = "/car:delete"
+
+    def test_object_gets_deleted(self):
+        # TODO: DRY this custom car creation
+        car = Car.objects.create(
+            **{
+                "registration_number": "asdf-123",
+                "max_passengers": 444,
+                "year_of_manufacture": 2000,
+                "model": "a",
+                "manufacturer": "b",
+            }
+        )
+
+        response = self.client.post(self.url, data={"pk": car.pk})
+
+        self.assertEqual(response.status_code, 204)
+        self.assertEqual(len(Car.objects.all()), 0)
+
+    def test_dont_delete_anything_if_invalid_pk(self):
+        Car.objects.create(
+            **{
+                "registration_number": "asdf-123",
+                "max_passengers": 444,
+                "year_of_manufacture": 2000,
+                "model": "a",
+                "manufacturer": "b",
+            }
+        )
+
+        invalid_pk = 99999
+        response = self.client.post(self.url, data={"pk": invalid_pk})
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(len(Car.objects.all()), 1)
+
+    def test_dont_delete_anything_if_pk_not_specified(self):
+        Car.objects.create(
+            **{
+                "registration_number": "asdf-123",
+                "max_passengers": 444,
+                "year_of_manufacture": 2000,
+                "model": "a",
+                "manufacturer": "b",
+            }
+        )
+
+        response = self.client.post(self.url)
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(len(Car.objects.all()), 1)
