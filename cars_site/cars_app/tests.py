@@ -1,3 +1,6 @@
+from unittest import mock
+
+from django.forms.models import model_to_dict
 from django.test import TestCase
 
 from .views import *
@@ -167,8 +170,7 @@ class TestCarsListView(TestCase):
         self.assertNotIn("motor_type", response_json3[0]["fields"].keys())
 
         response4 = self.client.get(
-            "/car:list",
-            data={"show_category": False, "show_type": True}
+            "/car:list", data={"show_category": False, "show_type": True}
         )
 
         self.assertEqual(response4.status_code, 200)
@@ -176,3 +178,84 @@ class TestCarsListView(TestCase):
         self.assertNotIn("category", response_json4[0]["fields"].keys())
         self.assertIn("motor_type", response_json4[0]["fields"].keys())
 
+
+class TestAddCarView(TestCase):
+    def test_single_car_can_be_added(self):
+        post_data = {
+            "registration_number": "asdf-123",
+            "max_passengers": 444,
+            "year_of_manufacture": 2000,
+            "model": "a",
+            "manufacturer": "b",
+        }
+        response = self.client.post("/car:add", data=post_data)
+
+        self.assertEqual(response.status_code, 201)
+        cars = Car.objects.all()
+
+        self.assertEqual(1, len(cars))
+
+        car = model_to_dict(cars[0])
+        # These 3 params are not the subject of test
+        car.pop("motor_type")
+        car.pop("category")
+        car.pop("id")
+
+        self.assertEqual(post_data, car)
+
+    def test_add_multiple_cars(self):
+        post_data = {
+            "registration_number": "asdf-123",
+            "max_passengers": 444,
+            "year_of_manufacture": 2000,
+            "model": "a",
+            "manufacturer": "b",
+        }
+        response = self.client.post("/car:add", data=post_data)
+        self.assertEqual(response.status_code, 201)
+
+        post_data2 = {
+            "registration_number": "gjhk-123",
+            "max_passengers": 444,
+            "year_of_manufacture": 2000,
+            "model": "a",
+            "manufacturer": "b",
+        }
+        response2 = self.client.post("/car:add", data=post_data2)
+        self.assertEqual(response2.status_code, 201)
+
+        cars = Car.objects.all()
+
+        self.assertEqual(2, len(cars))
+
+    def test_resource_is_not_created_when_invalid_data(self):
+        max_passengers = "asdf"
+        year_of_manufacture = "349?hn.;34"
+        post_data = {
+            "registration_number": "asdf-123",
+            "max_passengers": max_passengers,
+            "year_of_manufacture": year_of_manufacture,
+            "model": "a",
+            "manufacturer": "b",
+        }
+        response = self.client.post("/car:add", data=post_data)
+
+        self.assertEqual(response.status_code, 400)
+        cars = Car.objects.all()
+
+        self.assertEqual(0, len(cars))
+
+    def test_resource_is_not_created_when_not_enough_data(self):
+        post_data = {
+            "registration_number": "asdf-123",
+            "max_passengers": 4,
+            "year_of_manufacture": 2000,
+            "model": "a",
+            # No manufacturer
+        }
+        response = self.client.post("/car:add", data=post_data)
+
+        self.assertEqual(response.status_code, 400)
+        cars = Car.objects.all()
+
+        self.assertEqual(0, len(cars))

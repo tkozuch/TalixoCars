@@ -4,12 +4,11 @@ from django.core import serializers
 from django.core.serializers.json import DjangoJSONEncoder
 from django.forms.models import model_to_dict
 from django.http import HttpResponse
-from rest_framework import generics, status
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 
-from .forms import UpdateCarForm
 from .models import Car
 from .serializers import CarSerializer, CarUpdateSerializer, CarPkSerializer
 
