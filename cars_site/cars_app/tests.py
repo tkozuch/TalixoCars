@@ -314,9 +314,6 @@ class TestUpdateCarView(TestCase):
         car_updated_second_time = Car.objects.get(id=car.pk)
         self.assertEqual(car_updated_second_time.registration_number, "KNS-xxxx23")
 
-        # TODO: checking of additional parameters could also be done for code consistency. (
-        #  helper function?)
-
     def test_multiple_parameters_can_be_updated(self):
         car = Car.objects.create(
             **{
@@ -396,7 +393,6 @@ class TestDeleteCarView(TestCase):
         self.url = "/car:delete"
 
     def test_object_gets_deleted(self):
-        # TODO: DRY this custom car creation
         car = Car.objects.create(
             **{
                 "registration_number": "asdf-123",
