@@ -1,6 +1,4 @@
-from unittest import mock
-
-from django.forms.models import model_to_dict
+from django.forms import model_to_dict
 from django.test import TestCase
 
 from .views import *
@@ -179,6 +177,7 @@ class TestCarsListView(TestCase):
         self.assertIn("motor_type", response_json4[0]["fields"].keys())
 
 
+# TODO: urls as class properties
 class TestAddCarView(TestCase):
     def test_single_car_can_be_added(self):
         post_data = {
@@ -259,3 +258,122 @@ class TestAddCarView(TestCase):
         cars = Car.objects.all()
 
         self.assertEqual(0, len(cars))
+
+
+class TestUpdateCarView(TestCase):
+    def setUp(self) -> None:
+        self.url = "/car:update"
+
+    def test_only_specified_parameter_gets_updated(self):
+        car = Car.objects.create(
+            **{
+                "registration_number": "asdf-123",
+                "max_passengers": 444,
+                "year_of_manufacture": 2000,
+                "model": "a",
+                "manufacturer": "b",
+            }
+        )
+
+        response = self.client.post(
+            self.url,
+            data={"pk": car.pk, "max_passengers": "4"},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 204)
+
+        car_updated = Car.objects.get(id=car.pk)
+        self.assertEqual(car_updated.max_passengers, 4)
+
+        self.assertEqual(car_updated.registration_number, car.registration_number)
+        self.assertEqual(car_updated.year_of_manufacture, car.year_of_manufacture)
+        self.assertEqual(car_updated.model, car.model)
+        self.assertEqual(car_updated.manufacturer, car.manufacturer)
+
+        response2 = self.client.post(
+            self.url,
+            data={"pk": car.pk, "registration_number": "KNS-xxxx23"},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response2.status_code, 204)
+
+        car_updated_second_time = Car.objects.get(id=car.pk)
+        self.assertEqual(car_updated_second_time.registration_number, "KNS-xxxx23")
+
+        # TODO: checking of additional parameters could also be done for code consistency. (
+        #  helper function?)
+
+    def test_multiple_parameters_can_be_updated(self):
+        car = Car.objects.create(
+            **{
+                "registration_number": "asdf-123",
+                "max_passengers": 444,
+                "year_of_manufacture": 2000,
+                "model": "a",
+                "manufacturer": "b",
+            }
+        )
+
+        response = self.client.post(
+            self.url,
+            data={"pk": car.pk, "max_passengers": 4, "year_of_manufacture": 2010},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 204)
+
+        car_updated = Car.objects.get(id=car.pk)
+        self.assertEqual(car_updated.max_passengers, 4)
+        self.assertEqual(car_updated.year_of_manufacture, 2010)
+
+    def test_car_doesnt_get_updated_if_invalid_pk(self):
+        car = Car.objects.create(
+            **{
+                "registration_number": "asdf-123",
+                "max_passengers": 444,
+                "year_of_manufacture": 2000,
+                "model": "a",
+                "manufacturer": "b",
+            }
+        )
+        invalid_pk = 999999
+
+        response = self.client.post(
+            self.url,
+            data={"pk": invalid_pk, "max_passengers": 4, "year_of_manufacture": 2010},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+        car_updated = Car.objects.get(id=car.pk)
+        self.assertDictEqual(model_to_dict(car), model_to_dict(car_updated))
+
+    def test_car_doesnt_get_updated_if_invalid_parameter_value_sent(self):
+        car = Car.objects.create(
+            **{
+                "registration_number": "asdf-123",
+                "max_passengers": 444,
+                "year_of_manufacture": 2000,
+                "model": "a",
+                "manufacturer": "b",
+            }
+        )
+        invalid_passengers_value = "asdf"
+
+        response = self.client.post(
+            self.url,
+            data={
+                "pk": car.pk,
+                "max_passengers": invalid_passengers_value,
+                "year_of_manufacture": 2010,
+            },
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 422)
+
+        car_updated = Car.objects.get(id=car.pk)
+        self.assertDictEqual(model_to_dict(car), model_to_dict(car_updated))
