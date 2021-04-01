@@ -5,19 +5,22 @@ from .models import Car
 
 
 class TestGetCarView(TestCase):
+    def setUp(self) -> None:
+        self.url = "/car:retrieve"
+
     def test_returns_error_code_when_pk_not_provided(self):
-        response = self.client.get("/car:retrieve")
+        response = self.client.get(self.url)
         self.assertEqual(response.status_code, 422)
 
     def test_returns_error_code_when_no_car_present(self):
-        response = self.client.get("/car:retrieve", data={"pk": 3})
+        response = self.client.get(self.url, data={"pk": 3})
         self.assertEqual(response.status_code, 422)
 
     def test_returns_car_in_json_format_if_pk_exists(self):
         car = Car.objects.create(
             max_passengers=4, registration_number="asdf", year_of_manufacture=2000
         )
-        response = self.client.get("/car:retrieve", data={"pk": car.pk})
+        response = self.client.get(self.url, data={"pk": car.pk})
         self.assertEqual(response.status_code, 200)
         self.assertDictEqual(
             response.json(),
@@ -35,14 +38,14 @@ class TestGetCarView(TestCase):
         car = Car.objects.create(
             max_passengers=4, registration_number="asdf", year_of_manufacture=2000
         )
-        response = self.client.get("/car:retrieve", data={"pk": car.pk})
+        response = self.client.get(self.url, data={"pk": car.pk})
         response_json = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertNotIn("category", response_json.keys())
         self.assertNotIn("motor_type", response_json.keys())
 
         response2 = self.client.get(
-            "/car:retrieve", data={"pk": car.pk, "show_category": True, "show_motor_type": True}
+            self.url, data={"pk": car.pk, "show_category": True, "show_motor_type": True}
         )
         response_json2 = response2.json()
 
@@ -51,7 +54,7 @@ class TestGetCarView(TestCase):
         self.assertIn("motor_type", response_json2.keys())
 
         response3 = self.client.get(
-            "/car:retrieve",
+            self.url,
             data={"pk": car.pk, "show_category": True, "show_motor_type": False},
         )
         response_json3 = response3.json()
@@ -61,7 +64,7 @@ class TestGetCarView(TestCase):
         self.assertNotIn("motor_type", response_json3.keys())
 
         response4 = self.client.get(
-            "/car:retrieve",
+            self.url,
             data={"pk": car.pk, "show_category": False, "show_motor_type": True},
         )
         response_json4 = response4.json()
@@ -72,6 +75,9 @@ class TestGetCarView(TestCase):
 
 
 class TestCarsListView(TestCase):
+    def setUp(self) -> None:
+        self.url = "/car:list"
+
     def test_returns_list_of_car_objects(self):
         car = Car.objects.create(
             max_passengers=4, registration_number="car-1", year_of_manufacture=2000
@@ -83,7 +89,7 @@ class TestCarsListView(TestCase):
             max_passengers=6, registration_number="car-3", year_of_manufacture=2002
         )
 
-        response = self.client.get("/car:list")
+        response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.json(),
@@ -125,7 +131,7 @@ class TestCarsListView(TestCase):
         )
 
     def test_returns_empty_list_if_no_cars_created(self):
-        response = self.client.get("/car:list")
+        response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), [])
 
@@ -140,14 +146,14 @@ class TestCarsListView(TestCase):
             max_passengers=6, registration_number="car-3", year_of_manufacture=2002
         )
 
-        response = self.client.get("/car:list")
+        response = self.client.get(self.url)
         response_json = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertNotIn("category", response_json[0]["fields"].keys())
         self.assertNotIn("motor_type", response_json[0]["fields"].keys())
 
         response2 = self.client.get(
-            "/car:list", data={"show_category": True, "show_motor_type": True}
+            self.url, data={"show_category": True, "show_motor_type": True}
         )
 
         self.assertEqual(response2.status_code, 200)
@@ -156,7 +162,7 @@ class TestCarsListView(TestCase):
         self.assertIn("motor_type", response_json2[0]["fields"].keys())
 
         response3 = self.client.get(
-            "/car:list",
+            self.url,
             data={"show_category": True, "show_motor_type": False},
         )
 
@@ -166,7 +172,7 @@ class TestCarsListView(TestCase):
         self.assertNotIn("motor_type", response_json3[0]["fields"].keys())
 
         response4 = self.client.get(
-            "/car:list", data={"show_category": False, "show_motor_type": True}
+            self.url, data={"show_category": False, "show_motor_type": True}
         )
 
         self.assertEqual(response4.status_code, 200)
@@ -175,8 +181,10 @@ class TestCarsListView(TestCase):
         self.assertIn("motor_type", response_json4[0]["fields"].keys())
 
 
-# TODO: urls as class properties
 class TestAddCarView(TestCase):
+    def setUp(self) -> None:
+        self.url = "/car:add"
+
     def test_single_car_can_be_added(self):
         post_data = {
             "registration_number": "asdf-123",
@@ -187,7 +195,7 @@ class TestAddCarView(TestCase):
             "category": "economy",
             "motor_type": "electric"
         }
-        response = self.client.post("/car:add", data=post_data)
+        response = self.client.post(self.url, data=post_data)
 
         self.assertEqual(response.status_code, 201)
         cars = Car.objects.all()
@@ -209,7 +217,7 @@ class TestAddCarView(TestCase):
             "category": "economy",
             "motor_type": "electric"
         }
-        response = self.client.post("/car:add", data=post_data)
+        response = self.client.post(self.url, data=post_data)
         self.assertEqual(response.status_code, 201)
 
         post_data2 = {
@@ -221,7 +229,7 @@ class TestAddCarView(TestCase):
             "category": "economy",
             "motor_type": "electric"
         }
-        response2 = self.client.post("/car:add", data=post_data2)
+        response2 = self.client.post(self.url, data=post_data2)
         self.assertEqual(response2.status_code, 201)
 
         cars = Car.objects.all()
@@ -240,7 +248,7 @@ class TestAddCarView(TestCase):
             "category": "economy",
             "motor_type": "electric"
         }
-        response = self.client.post("/car:add", data=post_data)
+        response = self.client.post(self.url, data=post_data)
 
         self.assertEqual(response.status_code, 400)
         cars = Car.objects.all()
@@ -256,7 +264,7 @@ class TestAddCarView(TestCase):
             "category": "economy",
             # no motor_type
         }
-        response = self.client.post("/car:add", data=post_data)
+        response = self.client.post(self.url, data=post_data)
 
         self.assertEqual(response.status_code, 400)
         cars = Car.objects.all()
