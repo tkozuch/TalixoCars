@@ -41,9 +41,8 @@ class TestGetCarView(TestCase):
         self.assertNotIn("category", response_json.keys())
         self.assertNotIn("motor_type", response_json.keys())
 
-        # TODO: Change show_type to more explicit name - show_motor_type
         response2 = self.client.get(
-            "/car:retrieve", data={"pk": car.pk, "show_category": True, "show_type": True}
+            "/car:retrieve", data={"pk": car.pk, "show_category": True, "show_motor_type": True}
         )
         response_json2 = response2.json()
 
@@ -53,7 +52,7 @@ class TestGetCarView(TestCase):
 
         response3 = self.client.get(
             "/car:retrieve",
-            data={"pk": car.pk, "show_category": True, "show_type": False},
+            data={"pk": car.pk, "show_category": True, "show_motor_type": False},
         )
         response_json3 = response3.json()
 
@@ -63,7 +62,7 @@ class TestGetCarView(TestCase):
 
         response4 = self.client.get(
             "/car:retrieve",
-            data={"pk": car.pk, "show_category": False, "show_type": True},
+            data={"pk": car.pk, "show_category": False, "show_motor_type": True},
         )
         response_json4 = response4.json()
 
@@ -147,9 +146,8 @@ class TestCarsListView(TestCase):
         self.assertNotIn("category", response_json[0]["fields"].keys())
         self.assertNotIn("motor_type", response_json[0]["fields"].keys())
 
-        # TODO: Change show_type to more explicit name - show_motor_type
         response2 = self.client.get(
-            "/car:list", data={"show_category": True, "show_type": True}
+            "/car:list", data={"show_category": True, "show_motor_type": True}
         )
 
         self.assertEqual(response2.status_code, 200)
@@ -159,7 +157,7 @@ class TestCarsListView(TestCase):
 
         response3 = self.client.get(
             "/car:list",
-            data={"show_category": True, "show_type": False},
+            data={"show_category": True, "show_motor_type": False},
         )
 
         self.assertEqual(response3.status_code, 200)
@@ -168,7 +166,7 @@ class TestCarsListView(TestCase):
         self.assertNotIn("motor_type", response_json3[0]["fields"].keys())
 
         response4 = self.client.get(
-            "/car:list", data={"show_category": False, "show_type": True}
+            "/car:list", data={"show_category": False, "show_motor_type": True}
         )
 
         self.assertEqual(response4.status_code, 200)

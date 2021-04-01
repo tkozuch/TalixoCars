@@ -52,7 +52,7 @@ def get_cars_list(request):
 
 def _get_flags_from_params(request):
     show_category = request.GET.get("show_category", "false")
-    show_type = request.GET.get("show_type", "false")
+    show_type = request.GET.get("show_motor_type", "false")
     if show_category.lower() not in ["true", "false"] and show_type.lower() not in [
         "true",
         "false",
