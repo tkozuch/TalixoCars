@@ -17,40 +17,65 @@ from .serializers import CarSerializer, CarUpdateSerializer, CarPkSerializer
 @api_view(["GET"])
 def get_car(request):
     try:
-        id_ = request.GET["id"]
-    except KeyError:
+        show_category, show_type = _get_flags_from_params(request)
+        id_ = request.GET["pk"]
+    except (WrongParamsException, KeyError):
         return HttpResponse(status=422)
     else:
-        car = Car.objects.get(id=id_)
-        car_serialized = json.dumps(model_to_dict(car), cls=DjangoJSONEncoder)
-        return HttpResponse(car_serialized, content_type="text/json")
+        needed_fields = _get_needed_fields(show_category, show_type)
+        try:
+            # TODO: Needed fields filtering is probably of no use here as it still returns the
+            #  whole object.
+            [car] = Car.objects.only(*needed_fields).filter(id=id_)
+        except (Car.DoesNotExist, ValueError):
+            return HttpResponse(status=422)
+        else:
+            car_serialized = json.dumps(model_to_dict(car, fields=needed_fields),
+                                        cls=DjangoJSONEncoder)
+            return HttpResponse(car_serialized, content_type="application/json")
 
 
 @api_view(["GET"])
 def get_cars_list(request):
-    # TODO: Change for parser
-    show_category = request.GET.get("show_category", "false")
-    show_type = request.GET.get("show_category", "false")
-    if show_category.lower() not in ["true", "false"] and show_type.lower() not in [
-        "true",
-        "false",
-    ]:
+    try:
+        show_category, show_type = _get_flags_from_params(request)
+    except WrongParamsException:
         return HttpResponse(status=422)
     else:
-        show_category = show_category.lower() == "true"
-        show_type = show_type.lower() == "true"
-        needed_fields = [field.name for field in Car._meta.get_fields()]
-        if show_category is False:
-            needed_fields.remove("category")
-        if show_type is False:
-            needed_fields.remove("motor_type")
-
+        needed_fields = _get_needed_fields(show_category, show_type)
+        # TODO: Needed fields filtering is probably of no use here as it still returns the
+        #  whole object.
         cars = Car.objects.only(*needed_fields)
 
         return HttpResponse(
             serializers.serialize("json", cars, fields=needed_fields),
             content_type="text/json",
         )
+
+
+def _get_flags_from_params(request):
+    # TODO: Change for parser
+    show_category = request.GET.get("show_category", "false")
+    show_type = request.GET.get("show_type", "false")
+    if show_category.lower() not in ["true", "false"] and show_type.lower() not in [
+        "true",
+        "false",
+    ]:
+        raise WrongParamsException("Flags should have values either 'true' or 'false'")
+    else:
+        return show_category, show_type
+
+
+def _get_needed_fields(show_category, show_type):
+    show_category = show_category.lower() == "true"
+    show_type = show_type.lower() == "true"
+    needed_fields = [field.name for field in Car._meta.get_fields()]
+    if show_category is False:
+        needed_fields.remove("category")
+    if show_type is False:
+        needed_fields.remove("motor_type")
+
+    return needed_fields
 
 
 @api_view(["POST"])
@@ -92,3 +117,7 @@ def delete_car(request):
             return HttpResponse(status=422)
         else:
             return HttpResponse(status=204)
+
+
+class WrongParamsException(Exception):
+    pass
