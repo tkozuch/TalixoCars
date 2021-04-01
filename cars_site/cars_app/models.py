@@ -15,14 +15,14 @@ class MotorTypeChoices(models.TextChoices):
 class Car(models.Model):
     objects = models.Manager()
 
-    registration_number = models.fields.CharField(max_length=15, unique=True)
-    max_passengers = models.fields.IntegerField()
-    year_of_manufacture = models.fields.IntegerField()
-    manufacturer = models.fields.CharField(max_length=20)
-    model = models.fields.CharField(max_length=20)
+    registration_number = models.fields.CharField(max_length=15, unique=True, null=False)
+    max_passengers = models.fields.IntegerField(null=False)
+    year_of_manufacture = models.fields.IntegerField(null=False)
+    manufacturer = models.fields.CharField(max_length=20, null=False)
+    model = models.fields.CharField(max_length=20, null=False)
     category = models.CharField(
-        choices=CarClassChoices.choices, max_length=30, default=CarClassChoices.BUSINESS
+        choices=CarClassChoices.choices, max_length=30, null=False
     )
     motor_type = models.CharField(
-        choices=MotorTypeChoices.choices, max_length=40, default=MotorTypeChoices.HYBRID
+        choices=MotorTypeChoices.choices, max_length=40, null=False
     )

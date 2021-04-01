@@ -186,6 +186,8 @@ class TestAddCarView(TestCase):
             "year_of_manufacture": 2000,
             "model": "a",
             "manufacturer": "b",
+            "category": "economy",
+            "motor_type": "electric"
         }
         response = self.client.post("/car:add", data=post_data)
 
@@ -195,9 +197,6 @@ class TestAddCarView(TestCase):
         self.assertEqual(1, len(cars))
 
         car = model_to_dict(cars[0])
-        # These 3 params are not the subject of test
-        car.pop("motor_type")
-        car.pop("category")
         car.pop("id")
 
         self.assertEqual(post_data, car)
@@ -209,6 +208,8 @@ class TestAddCarView(TestCase):
             "year_of_manufacture": 2000,
             "model": "a",
             "manufacturer": "b",
+            "category": "economy",
+            "motor_type": "electric"
         }
         response = self.client.post("/car:add", data=post_data)
         self.assertEqual(response.status_code, 201)
@@ -219,6 +220,8 @@ class TestAddCarView(TestCase):
             "year_of_manufacture": 2000,
             "model": "a",
             "manufacturer": "b",
+            "category": "economy",
+            "motor_type": "electric"
         }
         response2 = self.client.post("/car:add", data=post_data2)
         self.assertEqual(response2.status_code, 201)
@@ -236,6 +239,8 @@ class TestAddCarView(TestCase):
             "year_of_manufacture": year_of_manufacture,
             "model": "a",
             "manufacturer": "b",
+            "category": "economy",
+            "motor_type": "electric"
         }
         response = self.client.post("/car:add", data=post_data)
 
@@ -250,7 +255,8 @@ class TestAddCarView(TestCase):
             "max_passengers": 4,
             "year_of_manufacture": 2000,
             "model": "a",
-            # No manufacturer
+            "category": "economy",
+            # no motor_type
         }
         response = self.client.post("/car:add", data=post_data)
 
