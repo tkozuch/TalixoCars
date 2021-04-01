@@ -1,18 +1,17 @@
 from rest_framework import serializers
-from rest_framework import parsers
 
 from .models import Car
 
 
-# TODO: Dry Serializers
-# TODO: Provide better naming (CarCreateFieldsSerializer?)
-class CarSerializer(serializers.ModelSerializer):
+class CarCreateSerializer(serializers.ModelSerializer):
+    """Serializer for fields needed for Car resource creation."""
     class Meta:
         model = Car
         fields = '__all__'
 
 
 class CarUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for fields needed for Car resource update."""
     class Meta:
         model = Car
         fields = '__all__'
@@ -25,19 +24,3 @@ class CarUpdateSerializer(serializers.ModelSerializer):
         for field_name, field in self.fields.items():
             if field_name != 'pk':
                 field.required = False
-
-
-class CarPkSerializer(serializers.ModelSerializer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # DRF Serializer somehow recognizes it as not required. Shouldn't it be by default required?
-        self.fields["pk"].required = True
-
-    class Meta:
-        model = Car
-        fields = ["pk"]
-
-
-class CarsListParamsSerializer(serializers.Serializer):
-    show_category = serializers.BooleanField(required=False, default=False)
-    show_category = serializers.BooleanField(required=False, default=False)

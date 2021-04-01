@@ -10,7 +10,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 
 from .models import Car
-from .serializers import CarSerializer, CarUpdateSerializer, CarPkSerializer
+from .serializers import CarCreateSerializer, CarUpdateSerializer
 
 
 @api_view(["GET"])
@@ -44,7 +44,8 @@ def get_cars_list(request):
         needed_fields = _get_needed_fields(show_category, show_type)
         # TODO: Needed fields filtering is probably of no use here as it still returns the
         #  whole object.
-        cars = Car.objects.only(*needed_fields)
+        # TODO: Add Django-fields filtering.
+        cars = Car.objects.only(*needed_fields).values()
 
         return HttpResponse(
             serializers.serialize("json", cars, fields=needed_fields),
@@ -77,9 +78,10 @@ def _get_needed_fields(show_category, show_type):
     return needed_fields
 
 
+# TODO: Change so that all fields are required.
 @api_view(["POST"])
 def add_car(request):
-    serializer = CarSerializer(data=request.data)
+    serializer = CarCreateSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -92,13 +94,12 @@ def update_car(request):
     try:
         id_ = data["pk"]
         to_update = Car.objects.get(id=id_)
-    except (KeyError, Car.DoesNotExist):
+    except (KeyError, ValueError, Car.DoesNotExist):
         return HttpResponse(status=422)
     else:
         serializer = CarUpdateSerializer(instance=to_update, data=data)
         if serializer.is_valid():
-            # This should update the model, as the instance is not empty.
-            serializer.save()
+            serializer.update(instance=to_update, validated_data=serializer.validated_data)
             return HttpResponse(status=204)
         else:
             return HttpResponse(status=422)
@@ -107,15 +108,13 @@ def update_car(request):
 # TODO: Check if can be changed to generic? (but rather not)
 @api_view(["POST"])
 def delete_car(request):
-    serializer = CarPkSerializer(data=request.data)
-    if serializer.is_valid():
-        try:
-            id_ = request.data["pk"]
-            Car.objects.get(id=id_).delete()
-        except (KeyError, Car.DoesNotExist):
-            return HttpResponse(status=422)
-        else:
-            return HttpResponse(status=204)
+    try:
+        id_ = request.data["pk"]
+        Car.objects.get(id=id_).delete()
+    except (KeyError, ValueError, Car.DoesNotExist):
+        return HttpResponse(status=422)
+    else:
+        return HttpResponse(status=204)
 
 
 class WrongParamsException(Exception):

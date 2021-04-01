@@ -400,6 +400,23 @@ class TestDeleteCarView(TestCase):
         self.assertEqual(response.status_code, 204)
         self.assertEqual(len(Car.objects.all()), 0)
 
+    def test_dont_delete_anything_if_non_existing_pk(self):
+        Car.objects.create(
+            **{
+                "registration_number": "asdf-123",
+                "max_passengers": 444,
+                "year_of_manufacture": 2000,
+                "model": "a",
+                "manufacturer": "b",
+            }
+        )
+
+        non_existing_pk = 99999
+        response = self.client.post(self.url, data={"pk": non_existing_pk})
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(len(Car.objects.all()), 1)
+
     def test_dont_delete_anything_if_invalid_pk(self):
         Car.objects.create(
             **{
@@ -411,7 +428,7 @@ class TestDeleteCarView(TestCase):
             }
         )
 
-        invalid_pk = 99999
+        invalid_pk = 'asdf'
         response = self.client.post(self.url, data={"pk": invalid_pk})
 
         self.assertEqual(response.status_code, 422)
