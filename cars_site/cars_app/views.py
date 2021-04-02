@@ -25,7 +25,7 @@ def get_car(request):
         )
         try:
             [car] = Car.objects.filter(id=id_).values(*needed_fields)
-        except (Car.DoesNotExist, ValueError):
+        except ValueError:
             return HttpResponse(status=422)
         else:
             car_serialized = json.dumps(car, cls=DjangoJSONEncoder)
