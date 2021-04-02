@@ -8,6 +8,7 @@ from .models import Car
 log = logging.getLogger(__file__)
 
 
+# TODO: Make separate class for API validation
 class ValidationMixin:
     """Mixin for Serializers that implements methods for validating manufacturer and model
     fields."""

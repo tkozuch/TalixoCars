@@ -1,3 +1,6 @@
+from datetime import datetime
+
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 
 
@@ -13,11 +16,46 @@ class MotorTypeChoices(models.TextChoices):
 
 
 class Car(models.Model):
+    _MIN_MAX_PASSENGERS = 1
+    _MAX_MAX_PASSENGERS = 60
+    _MIN_YEAR_OF_MANUFACTURE = 1886  # First car's manufacture year
+    _MAX_YEAR_OF_MANUFACTURE = datetime.now().year
+    _REGISTRATION_NUMBER_FORMAT = r"^[A-Za-z0-9 \.\-]{3,}$"
+
     objects = models.Manager()
 
-    registration_number = models.fields.CharField(max_length=15, unique=True, null=False)
-    max_passengers = models.fields.IntegerField(null=False)
-    year_of_manufacture = models.fields.IntegerField(null=False)
+    registration_number = models.fields.CharField(
+        max_length=15,
+        unique=True,
+        null=False,
+        validators=[RegexValidator(_REGISTRATION_NUMBER_FORMAT)],
+    )
+    max_passengers = models.fields.PositiveIntegerField(
+        null=False,
+        validators=[
+            MinValueValidator(
+                _MIN_MAX_PASSENGERS,
+                f"Max passengers value is to low. Min: {_MIN_MAX_PASSENGERS}",
+            ),
+            MaxValueValidator(
+                _MAX_MAX_PASSENGERS,
+                f"Max passengers value is to high. Max: {_MAX_MAX_PASSENGERS}",
+            ),
+        ],
+    )
+    year_of_manufacture = models.fields.PositiveIntegerField(
+        null=False,
+        validators=[
+            MinValueValidator(
+                _MIN_YEAR_OF_MANUFACTURE,
+                message=f"Manufacture year is to low. Min: {_MIN_YEAR_OF_MANUFACTURE}",
+            ),
+            MaxValueValidator(
+                _MAX_YEAR_OF_MANUFACTURE,
+                message=f"Manufacture year is to high. Max: {_MAX_YEAR_OF_MANUFACTURE}",
+            ),
+        ],
+    )
     manufacturer = models.fields.CharField(max_length=20, null=False)
     model = models.fields.CharField(max_length=20, null=False)
     category = models.CharField(

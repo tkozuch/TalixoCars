@@ -197,8 +197,8 @@ class TestAddCarView(TestCase):
         validate_manufacturer.return_value = manufacturer
 
         post_data = {
-            "registration_number": "asdf-123",
-            "max_passengers": 444,
+            "registration_number": "KNS-123 HH",
+            "max_passengers": 4,
             "year_of_manufacture": 2000,
             "model": model,
             "manufacturer": manufacturer,
