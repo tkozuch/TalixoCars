@@ -433,7 +433,7 @@ class TestUpdateCarView(TestCase):
         car = Car.objects.create(
             **{
                 "registration_number": "asdf-123",
-                "max_passengers": 444,
+                "max_passengers": 4,
                 "year_of_manufacture": 2000,
                 "model": "a",
                 "manufacturer": "b",
@@ -455,6 +455,71 @@ class TestUpdateCarView(TestCase):
 
         car_updated = Car.objects.get(id=car.pk)
         self.assertDictEqual(model_to_dict(car), model_to_dict(car_updated))
+
+    @patch("cars_app.serializers.CarUpdateSerializer._get_manufacturer_models")
+    def test_car_cant_be_updated_with_invalid_manufacturer(self, get_models_mock):
+        # Invalid manufacturer should result in empty results from API
+        get_models_mock.return_value = []
+
+        car = Car.objects.create(
+            **{
+                "registration_number": "asdf-123",
+                "max_passengers": 4,
+                "year_of_manufacture": 2000,
+                "model": "Passat",
+                "manufacturer": "Porshe",
+            }
+        )
+
+        invalid_manufacturer = "Folkswagen"
+
+        post_data = {
+            "manufacturer": invalid_manufacturer,
+            "pk": car.pk
+        }
+
+        response = self.client.post(self.url, data=post_data, content_type="application/json")
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(
+            Car.objects.get(pk=car.pk).manufacturer,
+            "Porshe"
+        )
+
+    @patch("cars_app.serializers.CarUpdateSerializer._get_manufacturer_models")
+    def test_car_cant_be_updated_with_invalid_model(self, get_models_mock):
+        get_models_mock.return_value = [
+            {
+                "Model_Name": "Golf",
+            },
+            {
+                "Model_Name": "Passat",
+            },
+        ]
+        invalid_model = "126p"
+
+        car = Car.objects.create(
+            **{
+                "registration_number": "asdf-123",
+                "max_passengers": 4,
+                "year_of_manufacture": 2000,
+                "model": "Passat",
+                "manufacturer": "Volkswagen",
+            }
+        )
+
+        post_data = {
+            "model": invalid_model,
+            "pk": car.pk
+        }
+
+        response = self.client.post(self.url, data=post_data, content_type="application/json")
+
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(
+            Car.objects.get(pk=car.pk).manufacturer,
+            "Volkswagen"
+        )
 
 
 class TestDeleteCarView(TestCase):

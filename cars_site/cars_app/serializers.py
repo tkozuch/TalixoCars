@@ -8,40 +8,38 @@ from .models import Car
 log = logging.getLogger(__file__)
 
 
-class CarCreateSerializer(serializers.ModelSerializer):
-    """Serializer for fields needed for Car resource creation."""
+class ValidationMixin:
+    """Mixin for Serializers that implements methods for validating manufacturer and model
+    fields."""
 
     VALIDATING_API = "https://vpic.nhtsa.dot.gov/api/"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._manufacturer_models = None
-
-    class Meta:
-        model = Car
-        fields = "__all__"
+    _MANUFACTURER_MODELS = None
 
     def validate_manufacturer(self, value):
-        if self._manufacturer_models is None:
-            self._manufacturer_models = self._get_manufacturer_models(manufacturer=value)
+        if self._MANUFACTURER_MODELS is None:
+            self._MANUFACTURER_MODELS = self._get_manufacturer_models(manufacturer=value)
 
-        if not self._manufacturer_models:
+        if not self._MANUFACTURER_MODELS:
             raise serializers.ValidationError("This manufacturer does not exist.")
         else:
             return value
 
     def validate_model(self, value):
         # TODO: Dry this - perhaps move to property
-        if self._manufacturer_models is None:
-            self._manufacturer_models = self._get_manufacturer_models(manufacturer=value)
+        if self._MANUFACTURER_MODELS is None:
+            self._MANUFACTURER_MODELS = self._get_manufacturer_models(manufacturer=value)
 
-        if not self._manufacturer_models:
-            raise serializers.ValidationError("Unable to validate this field because wrong "
-                                              "manufacturer was provided.")
+        if not self._MANUFACTURER_MODELS:
+            raise serializers.ValidationError(
+                "Unable to validate this field because wrong "
+                "manufacturer was provided."
+            )
         elif not any(
-                [result["Model_Name"] == value for result in self._manufacturer_models]
-            ):
-            raise serializers.ValidationError("There is no such model for this manufacturer")
+            [result["Model_Name"] == value for result in self._MANUFACTURER_MODELS]
+        ):
+            raise serializers.ValidationError(
+                "There is no such model for this manufacturer"
+            )
         else:
             return value
 
@@ -67,7 +65,15 @@ class CarCreateSerializer(serializers.ModelSerializer):
         return response.json()["Results"]
 
 
-class CarUpdateSerializer(serializers.ModelSerializer):
+class CarCreateSerializer(serializers.ModelSerializer, ValidationMixin):
+    """Serializer for fields needed for Car resource creation."""
+
+    class Meta:
+        model = Car
+        fields = "__all__"
+
+
+class CarUpdateSerializer(serializers.ModelSerializer, ValidationMixin):
     """Serializer for fields needed for Car resource update."""
 
     class Meta:
