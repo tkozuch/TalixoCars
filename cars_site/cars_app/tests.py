@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from django.forms import model_to_dict
 from django.test import TestCase
 
@@ -185,15 +187,23 @@ class TestAddCarView(TestCase):
     def setUp(self) -> None:
         self.url = "/car:add"
 
-    def test_single_car_can_be_added(self):
+    @patch("cars_app.serializers.CarCreateSerializer.validate_manufacturer")
+    @patch("cars_app.serializers.CarCreateSerializer.validate_model")
+    def test_single_car_can_be_added(self, validate_model, validate_manufacturer):
+        manufacturer = "Volkswagen"
+        model = "Passat"
+
+        validate_model.return_value = model
+        validate_manufacturer.return_value = manufacturer
+
         post_data = {
             "registration_number": "asdf-123",
             "max_passengers": 444,
             "year_of_manufacture": 2000,
-            "model": "a",
-            "manufacturer": "b",
+            "model": model,
+            "manufacturer": manufacturer,
             "category": "economy",
-            "motor_type": "electric"
+            "motor_type": "electric",
         }
         response = self.client.post(self.url, data=post_data)
 
@@ -207,27 +217,32 @@ class TestAddCarView(TestCase):
 
         self.assertEqual(post_data, car)
 
-    def test_add_multiple_cars(self):
+    @patch("cars_app.serializers.CarCreateSerializer.validate_manufacturer")
+    @patch("cars_app.serializers.CarCreateSerializer.validate_model")
+    def test_add_multiple_cars(self, validate_manufacturer, validate_model):
+        validate_model.return_value = "Volkswagen"
+        validate_manufacturer.return_value = "Golf"
+
         post_data = {
             "registration_number": "asdf-123",
-            "max_passengers": 444,
+            "max_passengers": 4,
             "year_of_manufacture": 2000,
-            "model": "a",
-            "manufacturer": "b",
+            "model": "Volkswagen",
+            "manufacturer": "Golf",
             "category": "economy",
-            "motor_type": "electric"
+            "motor_type": "electric",
         }
         response = self.client.post(self.url, data=post_data)
         self.assertEqual(response.status_code, 201)
 
         post_data2 = {
             "registration_number": "gjhk-123",
-            "max_passengers": 444,
-            "year_of_manufacture": 2000,
-            "model": "a",
-            "manufacturer": "b",
+            "max_passengers": 4,
+            "year_of_manufacture": 2001,
+            "model": "Volkswagen",
+            "manufacturer": "Golf",
             "category": "economy",
-            "motor_type": "electric"
+            "motor_type": "electric",
         }
         response2 = self.client.post(self.url, data=post_data2)
         self.assertEqual(response2.status_code, 201)
@@ -246,7 +261,7 @@ class TestAddCarView(TestCase):
             "model": "a",
             "manufacturer": "b",
             "category": "economy",
-            "motor_type": "electric"
+            "motor_type": "electric",
         }
         response = self.client.post(self.url, data=post_data)
 
@@ -255,7 +270,11 @@ class TestAddCarView(TestCase):
 
         self.assertEqual(0, len(cars))
 
-    def test_resource_is_not_created_when_not_enough_data(self):
+    @patch("cars_app.serializers.CarCreateSerializer.validate_manufacturer")
+    @patch("cars_app.serializers.CarCreateSerializer.validate_model")
+    def test_resource_is_not_created_when_not_enough_data(
+        self, validate_manufacturer, validate_model
+    ):
         post_data = {
             "registration_number": "asdf-123",
             "max_passengers": 4,
@@ -270,6 +289,56 @@ class TestAddCarView(TestCase):
         cars = Car.objects.all()
 
         self.assertEqual(0, len(cars))
+
+    @patch("cars_app.serializers.CarCreateSerializer._get_manufacturer_models")
+    def test_car_with_invalid_manufacturer_cant_be_created(self, get_models_mock):
+        # Invalid manufacturer should result in empty results from API
+        get_models_mock.return_value = []
+
+        invalid_manufacturer = "Folkswagen"
+
+        post_data = {
+            "registration_number": "asdf-123",
+            "max_passengers": 4,
+            "year_of_manufacture": 2000,
+            "model": "a",
+            "manufacturer": invalid_manufacturer,
+            "category": "economy",
+            "motor_type": "electric",
+        }
+
+        response = self.client.post(self.url, data=post_data)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(len(Car.objects.all()), 0)
+
+    @patch("cars_app.serializers.CarCreateSerializer._get_manufacturer_models")
+    def test_car_with_invalid_model_cant_be_created(self, get_models_mock):
+        get_models_mock.return_value = [
+            {
+                "Model_Name": "Golf",
+            },
+            {
+                "Model_Name": "Passat",
+            },
+        ]
+        manufacturer = "Volkswagen"
+        invalid_model = "126p"
+
+        post_data = {
+            "registration_number": "asdf-123",
+            "max_passengers": 4,
+            "year_of_manufacture": 2000,
+            "model": invalid_model,
+            "manufacturer": manufacturer,
+            "category": "economy",
+            "motor_type": "electric",
+        }
+
+        response = self.client.post(self.url, data=post_data)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(len(Car.objects.all()), 0)
 
 
 class TestUpdateCarView(TestCase):
