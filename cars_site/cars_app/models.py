@@ -27,11 +27,10 @@ class Car(models.Model):
     registration_number = models.fields.CharField(
         max_length=15,
         unique=True,
-        null=False,
         validators=[RegexValidator(_REGISTRATION_NUMBER_FORMAT)],
+        default=None
     )
     max_passengers = models.fields.PositiveIntegerField(
-        null=False,
         validators=[
             MinValueValidator(
                 _MIN_MAX_PASSENGERS,
@@ -44,7 +43,6 @@ class Car(models.Model):
         ],
     )
     year_of_manufacture = models.fields.PositiveIntegerField(
-        null=False,
         validators=[
             MinValueValidator(
                 _MIN_YEAR_OF_MANUFACTURE,
@@ -56,11 +54,11 @@ class Car(models.Model):
             ),
         ],
     )
-    manufacturer = models.fields.CharField(max_length=20, null=False)
-    model = models.fields.CharField(max_length=20, null=False)
+    manufacturer = models.fields.CharField(max_length=20, default=None)
+    model = models.fields.CharField(max_length=20, default=None)
     category = models.CharField(
-        choices=CarClassChoices.choices, max_length=30, null=False
+        choices=CarClassChoices.choices, max_length=30, default=None
     )
     motor_type = models.CharField(
-        choices=MotorTypeChoices.choices, max_length=40, null=False
+        choices=MotorTypeChoices.choices, max_length=40, default=None
     )

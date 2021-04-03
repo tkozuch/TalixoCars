@@ -5,6 +5,34 @@ from django.test import TestCase
 
 from .models import Car
 
+EXAMPLE_CAR_DATA = {
+    "registration_number": "asdf-123",
+    "max_passengers": 4,
+    "year_of_manufacture": 2000,
+    "model": "a",
+    "manufacturer": "b",
+    "category": "economy",
+    "motor_type": "first class",
+}
+EXAMPLE_CAR_DATA2 = {
+    "registration_number": "GHJK-123",
+    "max_passengers": 444,
+    "year_of_manufacture": 2001,
+    "model": "a",
+    "manufacturer": "b",
+    "category": "economy",
+    "motor_type": "first class",
+}
+EXAMPLE_CAR_DATA3 = {
+    "registration_number": "xxxx-123",
+    "max_passengers": 6,
+    "year_of_manufacture": 2002,
+    "model": "a",
+    "manufacturer": "b",
+    "category": "economy",
+    "motor_type": "first class",
+}
+
 
 class TestGetCarView(TestCase):
     def setUp(self) -> None:
@@ -19,27 +47,15 @@ class TestGetCarView(TestCase):
         self.assertEqual(response.status_code, 422)
 
     def test_returns_car_in_json_format_if_pk_exists(self):
-        car = Car.objects.create(
-            max_passengers=4, registration_number="asdf", year_of_manufacture=2000
-        )
+        car = Car.objects.create(**EXAMPLE_CAR_DATA)
         response = self.client.get(self.url, data={"pk": car.pk})
         self.assertEqual(response.status_code, 200)
         self.assertDictEqual(
-            response.json(),
-            {
-                "id": car.pk,
-                "registration_number": "asdf",
-                "max_passengers": 4,
-                "year_of_manufacture": 2000,
-                "manufacturer": "",
-                "model": "",
-            },
+            response.json(), model_to_dict(car, exclude=["category", "motor_type"])
         )
 
     def test_category_and_motor_type_are_only_returned_when_asked(self):
-        car = Car.objects.create(
-            max_passengers=4, registration_number="asdf", year_of_manufacture=2000
-        )
+        car = Car.objects.create(**EXAMPLE_CAR_DATA)
         response = self.client.get(self.url, data={"pk": car.pk})
         response_json = response.json()
         self.assertEqual(response.status_code, 200)
@@ -81,15 +97,9 @@ class TestCarsListView(TestCase):
         self.url = "/car:list"
 
     def test_returns_list_of_car_objects(self):
-        car = Car.objects.create(
-            max_passengers=4, registration_number="car-1", year_of_manufacture=2000
-        )
-        car2 = Car.objects.create(
-            max_passengers=5, registration_number="car-2", year_of_manufacture=2001
-        )
-        car3 = Car.objects.create(
-            max_passengers=6, registration_number="car-3", year_of_manufacture=2002
-        )
+        car = Car.objects.create(**EXAMPLE_CAR_DATA)
+        car2 = Car.objects.create(**EXAMPLE_CAR_DATA2)
+        car3 = Car.objects.create(**EXAMPLE_CAR_DATA3)
 
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -99,35 +109,23 @@ class TestCarsListView(TestCase):
                 {
                     "model": "cars_app.car",
                     "pk": car.pk,
-                    "fields": {
-                        "registration_number": "car-1",
-                        "max_passengers": 4,
-                        "year_of_manufacture": 2000,
-                        "manufacturer": "",
-                        "model": "",
-                    },
+                    "fields": model_to_dict(
+                        car, exclude=["category", "motor_type", "id"]
+                    ),
                 },
                 {
                     "model": "cars_app.car",
                     "pk": car2.pk,
-                    "fields": {
-                        "registration_number": "car-2",
-                        "max_passengers": 5,
-                        "year_of_manufacture": 2001,
-                        "manufacturer": "",
-                        "model": "",
-                    },
+                    "fields": model_to_dict(
+                        car2, exclude=["category", "motor_type", "id"]
+                    ),
                 },
                 {
                     "model": "cars_app.car",
                     "pk": car3.pk,
-                    "fields": {
-                        "registration_number": "car-3",
-                        "max_passengers": 6,
-                        "year_of_manufacture": 2002,
-                        "manufacturer": "",
-                        "model": "",
-                    },
+                    "fields": model_to_dict(
+                        car3, exclude=["category", "motor_type", "id"]
+                    ),
                 },
             ],
         )
@@ -139,15 +137,9 @@ class TestCarsListView(TestCase):
 
     def test_returns_category_and_motor_type_only_when_asked(self):
         # TODO: Check why it is possible to create car with not all parameters.
-        Car.objects.create(
-            max_passengers=4, registration_number="car-1", year_of_manufacture=2000
-        )
-        Car.objects.create(
-            max_passengers=5, registration_number="car-2", year_of_manufacture=2001
-        )
-        Car.objects.create(
-            max_passengers=6, registration_number="car-3", year_of_manufacture=2002
-        )
+        Car.objects.create(**EXAMPLE_CAR_DATA)
+        Car.objects.create(**EXAMPLE_CAR_DATA2)
+        Car.objects.create(**EXAMPLE_CAR_DATA3)
 
         response = self.client.get(self.url)
         response_json = response.json()
@@ -182,6 +174,27 @@ class TestCarsListView(TestCase):
         response_json4 = response4.json()
         self.assertNotIn("category", response_json4[0]["fields"].keys())
         self.assertIn("motor_type", response_json4[0]["fields"].keys())
+
+    # def test_possibility_to_filter_by_various_fields_and_types(self):
+    #     Car.objects.create(
+    #         max_passengers=4, registration_number="car-1", year_of_manufacture=2000
+    #     )
+    #     Car.objects.create(
+    #         max_passengers=5, registration_number="car-2", year_of_manufacture=2001
+    #     )
+    #     Car.objects.create(
+    #         max_passengers=6, registration_number="car-3", year_of_manufacture=2002
+    #     )
+    #
+    #     response = self.client.get(self.url)
+    #     response_json = response.json()
+    #     self.assertEqual(response.status_code, 200)
+    #     self.assertNotIn("category", response_json[0]["fields"].keys())
+    #     self.assertNotIn("motor_type", response_json[0]["fields"].keys())
+    #
+    #     response2 = self.client.get(
+    #         self.url, data={"show_category": True, "show_motor_type": True}
+    #     )
 
 
 class TestAddCarView(TestCase):
@@ -333,15 +346,7 @@ class TestUpdateCarView(TestCase):
         self.url = "/car:update"
 
     def test_only_specified_parameter_gets_updated(self):
-        car = Car.objects.create(
-            **{
-                "registration_number": "asdf-123",
-                "max_passengers": 444,
-                "year_of_manufacture": 2000,
-                "model": "a",
-                "manufacturer": "b",
-            }
-        )
+        car = Car.objects.create(**EXAMPLE_CAR_DATA)
 
         response = self.client.post(
             self.url,
@@ -371,15 +376,7 @@ class TestUpdateCarView(TestCase):
         self.assertEqual(car_updated_second_time.registration_number, "KNS-xxxx23")
 
     def test_multiple_parameters_can_be_updated(self):
-        car = Car.objects.create(
-            **{
-                "registration_number": "asdf-123",
-                "max_passengers": 444,
-                "year_of_manufacture": 2000,
-                "model": "a",
-                "manufacturer": "b",
-            }
-        )
+        car = Car.objects.create(**EXAMPLE_CAR_DATA)
 
         response = self.client.post(
             self.url,
@@ -394,15 +391,7 @@ class TestUpdateCarView(TestCase):
         self.assertEqual(car_updated.year_of_manufacture, 2010)
 
     def test_car_doesnt_get_updated_if_invalid_pk(self):
-        car = Car.objects.create(
-            **{
-                "registration_number": "asdf-123",
-                "max_passengers": 444,
-                "year_of_manufacture": 2000,
-                "model": "a",
-                "manufacturer": "b",
-            }
-        )
+        car = Car.objects.create(**EXAMPLE_CAR_DATA)
         invalid_pk = 999999
 
         response = self.client.post(
@@ -424,6 +413,8 @@ class TestUpdateCarView(TestCase):
                 "year_of_manufacture": 2000,
                 "model": "a",
                 "manufacturer": "b",
+                "category": "economy",
+                "motor_type": "first_class",
             }
         )
         invalid_passengers_value = "asdf"
@@ -455,6 +446,8 @@ class TestUpdateCarView(TestCase):
                 "year_of_manufacture": 2000,
                 "model": "Passat",
                 "manufacturer": "Porshe",
+                "category": "economy",
+                "motor_type": "first_class",
             }
         )
 
@@ -481,6 +474,8 @@ class TestUpdateCarView(TestCase):
                 "year_of_manufacture": 2000,
                 "model": "Passat",
                 "manufacturer": "Volkswagen",
+                "category": "economy",
+                "motor_type": "first_class",
             }
         )
 
@@ -499,15 +494,7 @@ class TestDeleteCarView(TestCase):
         self.url = "/car:delete"
 
     def test_object_gets_deleted(self):
-        car = Car.objects.create(
-            **{
-                "registration_number": "asdf-123",
-                "max_passengers": 444,
-                "year_of_manufacture": 2000,
-                "model": "a",
-                "manufacturer": "b",
-            }
-        )
+        car = Car.objects.create(**EXAMPLE_CAR_DATA)
 
         response = self.client.post(self.url, data={"pk": car.pk})
 
@@ -515,15 +502,7 @@ class TestDeleteCarView(TestCase):
         self.assertEqual(len(Car.objects.all()), 0)
 
     def test_dont_delete_anything_if_non_existing_pk(self):
-        Car.objects.create(
-            **{
-                "registration_number": "asdf-123",
-                "max_passengers": 444,
-                "year_of_manufacture": 2000,
-                "model": "a",
-                "manufacturer": "b",
-            }
-        )
+        Car.objects.create(**EXAMPLE_CAR_DATA)
 
         non_existing_pk = 99999
         response = self.client.post(self.url, data={"pk": non_existing_pk})
@@ -532,15 +511,7 @@ class TestDeleteCarView(TestCase):
         self.assertEqual(len(Car.objects.all()), 1)
 
     def test_dont_delete_anything_if_invalid_pk(self):
-        Car.objects.create(
-            **{
-                "registration_number": "asdf-123",
-                "max_passengers": 444,
-                "year_of_manufacture": 2000,
-                "model": "a",
-                "manufacturer": "b",
-            }
-        )
+        Car.objects.create(**EXAMPLE_CAR_DATA)
 
         invalid_pk = "asdf"
         response = self.client.post(self.url, data={"pk": invalid_pk})
@@ -549,15 +520,7 @@ class TestDeleteCarView(TestCase):
         self.assertEqual(len(Car.objects.all()), 1)
 
     def test_dont_delete_anything_if_pk_not_specified(self):
-        Car.objects.create(
-            **{
-                "registration_number": "asdf-123",
-                "max_passengers": 444,
-                "year_of_manufacture": 2000,
-                "model": "a",
-                "manufacturer": "b",
-            }
-        )
+        Car.objects.create(**EXAMPLE_CAR_DATA)
 
         response = self.client.post(self.url)
 
