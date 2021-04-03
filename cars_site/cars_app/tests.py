@@ -43,12 +43,12 @@ class TestGetCarView(TestCase):
         self.assertEqual(response.status_code, 422)
 
     def test_returns_error_code_when_no_car_present(self):
-        response = self.client.get(self.url, data={"pk": 3})
+        response = self.client.get(self.url, data={"id": 3})
         self.assertEqual(response.status_code, 422)
 
     def test_returns_car_in_json_format_if_pk_exists(self):
         car = Car.objects.create(**EXAMPLE_CAR_DATA)
-        response = self.client.get(self.url, data={"pk": car.pk})
+        response = self.client.get(self.url, data={"id": car.pk})
         self.assertEqual(response.status_code, 200)
         self.assertDictEqual(
             response.json(), model_to_dict(car, exclude=["category", "motor_type"])
@@ -56,14 +56,14 @@ class TestGetCarView(TestCase):
 
     def test_category_and_motor_type_are_only_returned_when_asked(self):
         car = Car.objects.create(**EXAMPLE_CAR_DATA)
-        response = self.client.get(self.url, data={"pk": car.pk})
+        response = self.client.get(self.url, data={"id": car.pk})
         response_json = response.json()
         self.assertEqual(response.status_code, 200)
         self.assertNotIn("category", response_json.keys())
         self.assertNotIn("motor_type", response_json.keys())
 
         response2 = self.client.get(
-            self.url, data={"pk": car.pk, "show_category": True, "show_motor_type": True}
+            self.url, data={"id": car.pk, "show_category": True, "show_motor_type": True}
         )
         response_json2 = response2.json()
 
@@ -73,7 +73,7 @@ class TestGetCarView(TestCase):
 
         response3 = self.client.get(
             self.url,
-            data={"pk": car.pk, "show_category": True, "show_motor_type": False},
+            data={"id": car.pk, "show_category": True, "show_motor_type": False},
         )
         response_json3 = response3.json()
 
@@ -83,7 +83,7 @@ class TestGetCarView(TestCase):
 
         response4 = self.client.get(
             self.url,
-            data={"pk": car.pk, "show_category": False, "show_motor_type": True},
+            data={"id": car.pk, "show_category": False, "show_motor_type": True},
         )
         response_json4 = response4.json()
 

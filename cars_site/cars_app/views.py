@@ -19,7 +19,7 @@ info_api = CarsInfoCheckApi()
 def get_car(request):
     try:
         show_category, show_type = _get_flags_from_params(request)
-        id_ = request.GET["pk"]
+        id_ = request.GET["id"]
     except (WrongParamsException, KeyError):
         return HttpResponse(status=422)
     else:
