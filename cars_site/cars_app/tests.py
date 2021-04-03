@@ -7,7 +7,7 @@ from .models import Car
 
 EXAMPLE_CAR_DATA = {
     "registration_number": "asdf-123",
-    "max_passengers": 4,
+    "max_passengers": 5,
     "year_of_manufacture": 2000,
     "model": "a",
     "manufacturer": "b",
@@ -16,7 +16,7 @@ EXAMPLE_CAR_DATA = {
 }
 EXAMPLE_CAR_DATA2 = {
     "registration_number": "GHJK-123",
-    "max_passengers": 444,
+    "max_passengers": 5,
     "year_of_manufacture": 2001,
     "model": "a",
     "manufacturer": "b",
@@ -175,26 +175,53 @@ class TestCarsListView(TestCase):
         self.assertNotIn("category", response_json4[0]["fields"].keys())
         self.assertIn("motor_type", response_json4[0]["fields"].keys())
 
-    # def test_possibility_to_filter_by_various_fields_and_types(self):
-    #     Car.objects.create(
-    #         max_passengers=4, registration_number="car-1", year_of_manufacture=2000
-    #     )
-    #     Car.objects.create(
-    #         max_passengers=5, registration_number="car-2", year_of_manufacture=2001
-    #     )
-    #     Car.objects.create(
-    #         max_passengers=6, registration_number="car-3", year_of_manufacture=2002
-    #     )
-    #
-    #     response = self.client.get(self.url)
-    #     response_json = response.json()
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertNotIn("category", response_json[0]["fields"].keys())
-    #     self.assertNotIn("motor_type", response_json[0]["fields"].keys())
-    #
-    #     response2 = self.client.get(
-    #         self.url, data={"show_category": True, "show_motor_type": True}
-    #     )
+    def test_possibility_to_filter_by_various_fields_and_types(self):
+        Car.objects.create(**EXAMPLE_CAR_DATA)
+        Car.objects.create(**EXAMPLE_CAR_DATA2)
+        Car.objects.create(**EXAMPLE_CAR_DATA3)
+
+        # Test filter for not exact value
+        response = self.client.get(self.url, data={"max_passengers__gt": 5})
+        self.assertEqual(response.status_code, 200)
+
+        cars_with_more_then_5_passengers = response.json()
+
+        self.assertEqual(len(cars_with_more_then_5_passengers), 1)
+        # TODO: Change the view so that all fields are returned in single dict, not nested one
+        #  like here
+        self.assertGreater(
+            cars_with_more_then_5_passengers[0]["fields"]["max_passengers"], 5
+        )
+
+        # Test filter for exact value
+        response2 = self.client.get(self.url, data={"max_passengers": 5})
+        self.assertEqual(response2.status_code, 200)
+
+        cars_with_5_passengers = response2.json()
+
+        self.assertEqual(len(cars_with_5_passengers), 2)
+        self.assertTrue(
+            all([car["fields"]["max_passengers"] == 5 for car in cars_with_5_passengers])
+        )
+
+        # Test filter returning all objects
+        response3 = self.client.get(self.url, data={"manufacturer": "b"})
+        self.assertEqual(response3.status_code, 200)
+
+        economy_cars = response3.json()
+
+        self.assertEqual(len(economy_cars), 3)
+        self.assertTrue(
+            all([car["fields"]["manufacturer"] == "b" for car in economy_cars])
+        )
+
+        # Test filter for similar registration number
+        response3 = self.client.get(self.url, data={"registration_number__icontains": "xxx"})
+        self.assertEqual(response3.status_code, 200)
+
+        economy_cars = response3.json()
+
+        self.assertEqual(len(economy_cars), 1)
 
 
 class TestAddCarView(TestCase):

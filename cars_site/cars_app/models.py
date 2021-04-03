@@ -4,7 +4,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator, RegexVa
 from django.db import models
 
 
-class CarClassChoices(models.TextChoices):
+class CarCategoryChoices(models.TextChoices):
     ECONOMY = "economy"
     BUSINESS = "business"
     FIRST_CLASS = "first class"
@@ -57,7 +57,7 @@ class Car(models.Model):
     manufacturer = models.fields.CharField(max_length=20, default=None)
     model = models.fields.CharField(max_length=20, default=None)
     category = models.CharField(
-        choices=CarClassChoices.choices, max_length=30, default=None
+        choices=CarCategoryChoices.choices, max_length=30, default=None
     )
     motor_type = models.CharField(
         choices=MotorTypeChoices.choices, max_length=40, default=None
