@@ -9,7 +9,10 @@ from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 
 from .models import Car
-from .serializers import CarCreateSerializer, CarUpdateSerializer
+from .serializers import GeneralCarSerializer, CarUpdateSerializer, CarsInfoCheckApi
+from .filters import CarFilter
+
+info_api = CarsInfoCheckApi()
 
 
 @api_view(["GET"])
@@ -42,7 +45,8 @@ def get_cars_list(request):
         needed_fields = _get_needed_fields(
             show_category, show_type, car_fields=Car._meta.get_fields()
         )
-        cars = Car.objects.only(*needed_fields)
+        qs = CarFilter(request.GET).qs
+        cars = qs.only(*needed_fields)
 
         return HttpResponse(
             serializers.serialize("json", cars, fields=needed_fields),
@@ -76,7 +80,7 @@ def _get_needed_fields(show_category, show_type, car_fields):
 
 @api_view(["POST"])
 def add_car(request):
-    serializer = CarCreateSerializer(data=request.data)
+    serializer = GeneralCarSerializer(info_api, data=request.data)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -92,7 +96,7 @@ def update_car(request):
     except (KeyError, ValueError, Car.DoesNotExist):
         return HttpResponse(status=422)
     else:
-        serializer = CarUpdateSerializer(instance=to_update, data=data)
+        serializer = CarUpdateSerializer(info_api, instance=to_update, data=data)
         if serializer.is_valid():
             serializer.update(
                 instance=to_update, validated_data=serializer.validated_data

@@ -8,78 +8,70 @@ from .models import Car
 log = logging.getLogger(__file__)
 
 
-# TODO: Make separate class for API validation
-class ValidationMixin:
-    """Mixin for Serializers that implements methods for validating manufacturer and model
-    fields."""
+class CarsInfoCheckApi:
+    URL = "https://vpic.nhtsa.dot.gov/api/"
 
-    VALIDATING_API = "https://vpic.nhtsa.dot.gov/api/"
-    _MANUFACTURER_MODELS = None
+    def __init__(self):
+        self._manufacturer_models = None
 
-    def validate_manufacturer(self, value):
-        if self._MANUFACTURER_MODELS is None:
-            self._MANUFACTURER_MODELS = self._get_manufacturer_models(manufacturer=value)
+    def get_manufacturer_models(self, manufacturer):
+        if self._manufacturer_models is None:
+            try:
+                response = requests.get(
+                    f"{self.URL}/vehicles/GetModelsForMake/{manufacturer}",
+                    params={"format": "json"},
+                )
+                response.raise_for_status()
+            except requests.exceptions.HTTPError:
+                log.exception(
+                    "External API signaled a problem. Check status code for further "
+                    "information. Aborting."
+                )
+            except requests.exceptions.RequestException:
+                log.exception(
+                    "An exception occurred while making request to external API: {}. Aborting.".format(
+                        self.URL
+                    )
+                )
+            else:
+                results = response.json()["Results"]
+                self._manufacturer_models = self._format_manufacturer_models(results)
 
-        if not self._MANUFACTURER_MODELS:
+        return self._manufacturer_models
+
+    @staticmethod
+    def _format_manufacturer_models(data):
+        return [model["Model_Name"] for model in data]
+
+
+class GeneralCarSerializer(serializers.ModelSerializer):
+    """Serializer for all fields of a Car model."""
+
+    class Meta:
+        model = Car
+        fields = "__all__"
+
+    def __init__(self, info_api, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.info_api = info_api
+
+    def validate(self, data):
+        manufacturer = data.get("manufacturer")
+        model = data.get("model")
+        manufacturer_models = self.info_api.get_manufacturer_models(manufacturer)
+
+        if manufacturer and not manufacturer_models:
             raise serializers.ValidationError("This manufacturer does not exist.")
-        else:
-            return value
-
-    def validate_model(self, value):
-        # TODO: Dry this - perhaps move to property
-        if self._MANUFACTURER_MODELS is None:
-            self._MANUFACTURER_MODELS = self._get_manufacturer_models(manufacturer=value)
-
-        if not self._MANUFACTURER_MODELS:
-            raise serializers.ValidationError(
-                "Unable to validate this field because wrong "
-                "manufacturer was provided."
-            )
-        elif not any(
-            [result["Model_Name"] == value for result in self._MANUFACTURER_MODELS]
-        ):
+        elif model and not any([result == model for result in manufacturer_models]):
             raise serializers.ValidationError(
                 "There is no such model for this manufacturer"
             )
         else:
-            return value
-
-    def _get_manufacturer_models(self, manufacturer):
-        try:
-            response = requests.get(
-                f"{self.VALIDATING_API}/vehicles/GetModelsForMake/{manufacturer}",
-                params={"format": "json"},
-            )
-            response.raise_for_status()
-        except requests.exceptions.HTTPError:
-            log.exception(
-                "External API signaled a problem. Check status code for further "
-                "information. Aborting."
-            )
-        except requests.exceptions.RequestException:
-            log.exception(
-                "An exception occurred while making request to external API: {}. Aborting.".format(
-                    self.VALIDATING_API
-                )
-            )
-
-        return response.json()["Results"]
+            return data
 
 
-class CarCreateSerializer(serializers.ModelSerializer, ValidationMixin):
-    """Serializer for fields needed for Car resource creation."""
-
-    class Meta:
-        model = Car
-        fields = "__all__"
-
-
-class CarUpdateSerializer(serializers.ModelSerializer, ValidationMixin):
+class CarUpdateSerializer(GeneralCarSerializer):
     """Serializer for fields needed for Car resource update."""
-
-    class Meta:
-        model = Car
-        fields = "__all__"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
