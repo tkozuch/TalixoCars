@@ -5,9 +5,9 @@ Api for management of your cars
 ## Prerequisites:
 
 To install and run this project, you will need to set `SECRET_KEY` environmental variable in the
- your working shell. 
+ your working shell. (Windows CLI: `set SECRET_KEY=<your_secret_key>` Unix CLI: `export SECRET_KEY=<your_secret_key>`)
 
-The value of this variable is of your choice. Refer to Django docs for more info.
+The value of this variable is of your choice. Please, refer to Django docs for more info.
 
 ## Installation
 ```
