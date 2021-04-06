@@ -17,7 +17,11 @@ pip install -r requirements.txt
 python ./cars_site/manage.py migrate
 ```
 
-## Running:
+## Running tests:
+
+```python ./cars_site/manage.py test cars_app```
+
+## Running app:
 ```
 python ./cars_site/manage.py runserver
 ```
