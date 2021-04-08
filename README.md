@@ -2,6 +2,10 @@
 
 Api for management of your cars
 
+### Technologies used:
+
+Python, Django, Django Rest Framework, Django-Filters, Unittest
+
 ## Prerequisites:
 
 To install and run this project, you will need to set `SECRET_KEY` environmental variable in the
