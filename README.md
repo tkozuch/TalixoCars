@@ -8,8 +8,9 @@ Python, Django, Django Rest Framework, Django-Filters, Unittest
 
 ## Prerequisites:
 
-To install and run this project, you will need to set `SECRET_KEY` environmental variable in the
- your working shell. (Windows CLI: `set SECRET_KEY=<your_secret_key>` Unix CLI: `export SECRET_KEY=<your_secret_key>`)
+To install and run this project, you will need to set `SECRET_KEY` environmental variable in
+ your working shell. (Windows CLI: `set SECRET_KEY=<your_secret_key>` 
+ Unix CLI: `export SECRET_KEY=<your_secret_key>`)
 
 The value of this variable is of your choice. Please, refer to Django docs for more info.
 
@@ -54,7 +55,8 @@ Body:
 }
 ```
 
-#### Update car: (only parameters to be changed need to be send)
+#### Update car:
+(only parameters to be changed need to be send)
 ```
 POST http://127.0.0.1:8000/car:update
 
@@ -75,10 +77,10 @@ GET http://127.0.0.1:8000/car:retrieve
 Params: 
     id <id of the car>
     show_category <[true/false] default:false, determines whether to fetch category property>
-    show_motor_type <[true/false] default:false, determines whether to fetch category property>
+    show_motor_type <[true/false] default:false, determines whether to fetch motor_type property>
 ```
 
-#### Get cars list:
+#### Filter cars:
 
 ```
 GET http://127.0.0.1:8000/car:list
@@ -88,7 +90,7 @@ Params:
     max_passengers__gt <int: show only cars that have number of max passengers greater then>
     [...] # more parameters possible
     show_category <[true/false] default:false, determines whether to fetch category property>
-    show_motor_type <[true/false] default:false, determines whether to fetch category property>
+    show_motor_type <[true/false] default:false, determines whether to fetch motor_type property>
 
 Example:
 http://127.0.0.1:8000/car:list?show_category=True&max_passengers__gt=10&registration_number__icontains=x
