@@ -372,7 +372,8 @@ class TestUpdateCarView(TestCase):
     def setUp(self) -> None:
         self.url = "/car:update"
 
-    def test_only_specified_parameter_gets_updated(self):
+    @patch("cars_app.views.info_api.get_manufacturer_models")
+    def test_only_specified_parameter_gets_updated(self, get_models):
         car = Car.objects.create(**EXAMPLE_CAR_DATA)
 
         response = self.client.post(
@@ -402,7 +403,8 @@ class TestUpdateCarView(TestCase):
         car_updated_second_time = Car.objects.get(id=car.pk)
         self.assertEqual(car_updated_second_time.registration_number, "KNS-xxxx23")
 
-    def test_multiple_parameters_can_be_updated(self):
+    @patch("cars_app.views.info_api.get_manufacturer_models")
+    def test_multiple_parameters_can_be_updated(self, get_models):
         car = Car.objects.create(**EXAMPLE_CAR_DATA)
 
         response = self.client.post(
