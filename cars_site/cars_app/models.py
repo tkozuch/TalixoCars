@@ -28,7 +28,7 @@ class Car(models.Model):
         max_length=15,
         unique=True,
         validators=[RegexValidator(_REGISTRATION_NUMBER_FORMAT)],
-        default=None
+        default=None,
     )
     max_passengers = models.fields.PositiveIntegerField(
         validators=[

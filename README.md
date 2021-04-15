@@ -88,7 +88,7 @@ GET http://127.0.0.1:8000/car:list
 Params: 
     max_passengers <int: show only cars with this many max passengers>
     max_passengers__gt <int: show only cars that have number of max passengers greater then>
-    [...] # more parameters possible
+    [...]
     show_category <[true/false] default:false, determines whether to fetch category property>
     show_motor_type <[true/false] default:false, determines whether to fetch motor_type property>
 

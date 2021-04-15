@@ -1,6 +1,6 @@
 from django_filters import rest_framework as filters
 
-from . models import Car
+from .models import Car
 
 
 class CarFilter(filters.FilterSet):
@@ -10,5 +10,5 @@ class CarFilter(filters.FilterSet):
             "max_passengers": ["exact", "gt"],
             "year_of_manufacture": ["lt", "exact", "gt"],
             "manufacturer": ["exact"],
-            "registration_number": ["icontains"]
+            "registration_number": ["icontains"],
         }

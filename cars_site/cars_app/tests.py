@@ -216,7 +216,9 @@ class TestCarsListView(TestCase):
         )
 
         # Test filter for similar registration number
-        response3 = self.client.get(self.url, data={"registration_number__icontains": "xxx"})
+        response3 = self.client.get(
+            self.url, data={"registration_number__icontains": "xxx"}
+        )
         self.assertEqual(response3.status_code, 200)
 
         economy_cars = response3.json()

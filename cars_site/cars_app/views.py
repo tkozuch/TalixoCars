@@ -8,9 +8,14 @@ from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 
-from .models import Car
-from .serializers import GeneralCarSerializer, CarUpdateSerializer, CarsInfoCheckApi, FlagSerializer
 from .filters import CarFilter
+from .models import Car
+from .serializers import (
+    CarsInfoCheckApi,
+    CarUpdateSerializer,
+    FlagSerializer,
+    GeneralCarSerializer,
+)
 
 info_api = CarsInfoCheckApi()
 
@@ -60,8 +65,10 @@ def _get_flags_from_params(request_params):
     serializer = FlagSerializer(data=request_params)
 
     if not serializer.is_valid():
-        raise WrongParamsException("Flags should have values either 'true' or 'false' and their "
-                                   "case variations, or 0, 1.")
+        raise WrongParamsException(
+            "Flags should have values either 'true' or 'false' and their "
+            "case variations, or 0, 1."
+        )
 
     show_category = serializer.data["show_category"]
     show_motor_type = serializer.data["show_motor_type"]
