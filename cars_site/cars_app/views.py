@@ -9,7 +9,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 
 from .models import Car
-from .serializers import GeneralCarSerializer, CarUpdateSerializer, CarsInfoCheckApi
+from .serializers import GeneralCarSerializer, CarUpdateSerializer, CarsInfoCheckApi, FlagSerializer
 from .filters import CarFilter
 
 info_api = CarsInfoCheckApi()
@@ -18,13 +18,13 @@ info_api = CarsInfoCheckApi()
 @api_view(["GET"])
 def get_car(request):
     try:
-        show_category, show_type = _get_flags_from_params(request)
+        show_category, show_motor_type = _get_flags_from_params(request.GET)
         id_ = request.GET["id"]
     except (WrongParamsException, KeyError):
         return HttpResponse(status=422)
     else:
         needed_fields = _get_needed_fields(
-            show_category, show_type, car_fields=Car._meta.get_fields()
+            show_category, show_motor_type, car_fields=Car._meta.get_fields()
         )
         try:
             [car] = Car.objects.filter(id=id_).values(*needed_fields)
@@ -38,7 +38,7 @@ def get_car(request):
 @api_view(["GET"])
 def get_cars_list(request):
     try:
-        show_category, show_type = _get_flags_from_params(request)
+        show_category, show_type = _get_flags_from_params(request.GET)
     except WrongParamsException:
         return HttpResponse(status=422)
     else:
@@ -54,22 +54,26 @@ def get_cars_list(request):
         )
 
 
-def _get_flags_from_params(request):
-    show_category = request.GET.get("show_category", "false")
-    show_type = request.GET.get("show_motor_type", "false")
-    if show_category.lower() not in ["true", "false"] and show_type.lower() not in [
-        "true",
-        "false",
-    ]:
-        raise WrongParamsException("Flags should have values either 'true' or 'false'")
-    else:
-        return show_category, show_type
+def _get_flags_from_params(request_params):
+    """Get values of boolean flags from request parameters."""
+
+    serializer = FlagSerializer(data=request_params)
+
+    if not serializer.is_valid():
+        raise WrongParamsException("Flags should have values either 'true' or 'false' and their "
+                                   "case variations, or 0, 1.")
+
+    show_category = serializer.data["show_category"]
+    show_motor_type = serializer.data["show_motor_type"]
+
+    return show_category, show_motor_type
 
 
 def _get_needed_fields(show_category, show_type, car_fields):
-    show_category = show_category.lower() == "true"
-    show_type = show_type.lower() == "true"
+    """Get list of fields that we need to fetch from the Car model."""
+
     needed_fields = [field.name for field in car_fields]
+
     if show_category is False:
         needed_fields.remove("category")
     if show_type is False:
@@ -84,6 +88,7 @@ def add_car(request):
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

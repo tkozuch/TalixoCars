@@ -81,3 +81,8 @@ class CarUpdateSerializer(GeneralCarSerializer):
         for field_name, field in self.fields.items():
             if field_name != "pk":
                 field.required = False
+
+
+class FlagSerializer(serializers.Serializer):
+    show_category = serializers.BooleanField(required=False, initial=False)
+    show_motor_type = serializers.BooleanField(required=False, initial=False)
